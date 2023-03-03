@@ -6,7 +6,7 @@ library(dplyr)
 
 forcepatch <-
   list.files(
-    path = "C:/Users/maxch/Documents/Analyse/DATA/STIMCARE_FORCE/PATCH",
+    path = "C:/Users/maxch/Git/FORCE/Data/PATCH",
     pattern = "\\.xml",
     all.files = TRUE,
     full.names = TRUE
@@ -47,3 +47,28 @@ newton <- as.data.frame(c(dfmax$forcekj*9.81))
 colnames(newton) <- "IMVC"
 dfmax <- cbind(dfmax , newton)
 
+#calcule RFD
+
+newton <- function(nt){nt$dataf*9.81}
+dflistforce <- lapply(dflistforce , newton)
+dftimeforce <- mapply(cbind, dflistforce , dflisttime , SIMPLIFY = FALSE)
+
+dftimeforce <- lapply(dftimeforce , setNames , rn)
+
+diferencepatch <- lapply(dftimeforce , dif)
+
+diferencepatch <- lapply(diferencepatch , add)
+diferencepatch <- mapply(cbind , diferencepatch , dftimeforce , SIMPLIFY = FALSE)
+renames <- c("diff", "force" , "temps")
+diferencepatch <- lapply(diferencepatch , setNames , renames)
+
+
+#rem <- function (remove) {remove[-c(1:which(remove$diff > 2)) , ]}
+#diferencepatch <- lapply(diferencepatch , rem)
+
+#rem <- function (remove) {remove[c(1:21) , ]}
+#diferencepatch <- lapply(diferencepatch , rem)
+
+#rfdpatch <- as.data.frame(lapply(diferencepatch , moy))
+#rfdpatch <- rfdpatch/0.2
+#rfdpatch <- t(rfdpatch)

@@ -11,19 +11,29 @@ selectpostpatchforce <- dfmax[rownames(dfmax) %like% "POST",]
 selectmidpatchforce <- dfmax[rownames(dfmax) %like% "MID",]
 selectpost48patchforce <- dfmax[rownames(dfmax) %like% "POST48",]
 
-selectpostpatchforce <- selectpostpatchforce[-grep("POST48", rownames(selectpostpatchforce)), ]
-selectpostpatchforce <- selectpostpatchforce[-grep("POSTARFD", rownames(selectpostpatchforce)), ]
-selectpostpatchforce <- selectpostpatchforce[-grep("POSTBRFD", rownames(selectpostpatchforce)), ]
 
-selectprepatchforce <- selectPREpatchforce[-grep("PREARFD", rownames(selectPREpatchforce)), ]
-selectprepatchforce <- selectprepatchforce[-grep("PREBRFD", rownames(selectprepatchforce)), ]
+selectpostpatchforce <-
+  selectpostpatchforce[-grep("POST48", rownames(selectpostpatchforce)),]
+selectpostpatchforce <-
+  selectpostpatchforce[-grep("POSTARFD", rownames(selectpostpatchforce)),]
+selectpostpatchforce <-
+  selectpostpatchforce[-grep("POSTBRFD", rownames(selectpostpatchforce)),]
 
-selectmidpatchforce <- selectmidpatchforce[-grep("MIDBRFD", rownames(selectmidpatchforce)), ]
-selectmidpatchforce <- selectmidpatchforce[-grep("MIDARFD", rownames(selectmidpatchforce)), ]
+selectprepatchforce <-
+  selectPREpatchforce[-grep("PREARFD", rownames(selectPREpatchforce)),]
+selectprepatchforce <-
+  selectprepatchforce[-grep("PREBRFD", rownames(selectprepatchforce)),]
+
+selectmidpatchforce <-
+  selectmidpatchforce[-grep("MIDBRFD", rownames(selectmidpatchforce)),]
+selectmidpatchforce <-
+  selectmidpatchforce[-grep("MIDARFD", rownames(selectmidpatchforce)),]
 
 
-selectpost48patchforce <- selectpost48patchforce[-grep("POST48ARFD", rownames(selectpost48patchforce)), ]
-selectpost48patchforce <- selectpost48patchforce[-grep("POST48BRFD", rownames(selectpost48patchforce)), ]
+selectpost48patchforce <-
+  selectpost48patchforce[-grep("POST48ARFD", rownames(selectpost48patchforce)),]
+selectpost48patchforce <-
+  selectpost48patchforce[-grep("POST48BRFD", rownames(selectpost48patchforce)),]
 
 #selectplacebo
 
