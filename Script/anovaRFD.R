@@ -6,107 +6,125 @@ library(agricolae)
 
 #selectpatch
 
-selectPREpatchrfd <- dfmax[rownames(dfmax) %like% "PRE", ]
-selectpostpatchrfd <- dfmax[rownames(dfmax) %like% "POST", ]
-selectmidpatchrfd <- dfmax[rownames(dfmax) %like% "MID", ]
-selectpost48patchrfd <- dfmax[rownames(dfmax) %like% "POST48", ]
+selectprepatchrfd <- as.data.frame(dfrfdpatch[rownames(dfrfdpatch) %like% "PRE", ])
+selectpostpatchrfd <- as.data.frame (dfrfdpatch[rownames(dfrfdpatch) %like% "POST", ])
+selectmidpatchrfd <- as.data.frame(dfrfdpatch[rownames(dfrfdpatch) %like% "MID", ])
+selectpost48patchrfd <- as.data.frame(dfrfdpatch[rownames(dfrfdpatch) %like% "POST48", ])
+
+colnames(selectprepatchrfd)  <- "rfd"
+colnames(selectpostpatchrfd)  <- "rfd"
+colnames(selectmidpatchrfd)  <- "rfd"
+colnames(selectpost48patchrfd)  <- "rfd"
+
+pattern <- "POST48|POSTAIMVC|POSTBIMVC|GM|JS|MA|MF"
+row_names_list <- -grep(pattern , rownames(selectpostpatchrfd)) %>% as.numeric()
+row_names_list <- rownames(selectpostpatchrfd)[row_names_list]
+
+test <-
+  as.data.frame(selectpostpatchrfd[rownames(selectpostpatchrfd) %in% row_names_list, ]) %>%
+  `rownames<-`(row_names_list)
 
 selectpostpatchrfd <-
   selectpostpatchrfd[-grep("POST48", rownames(selectpostpatchrfd)),]
 selectpostpatchrfd <-
-  selectpostpatchrfd[-grep("POSTAIMVC", rownames(selectpostpatchrfd)),]
+  as.data.frame(selectpostpatchrfd[-grep("POSTAIMVC", rownames(selectpostpatchrfd)),])
 selectpostpatchrfd <-
-  selectpostpatchrfd[-grep("POSTBIMVC", rownames(selectpostpatchrfd)),]
+  as.data.frame(selectpostpatchrfd[-grep("POSTBIMVC", rownames(selectpostpatchrfd)),])
 selectpostpatchrfd <-
-  selectpostpatchrfd[-grep("GM", rownames(selectpostpatchrfd)), ]
+  as.data.frame(selectpostpatchrfd[-grep("GM", rownames(selectpostpatchrfd)), ])
 selectpostpatchrfd <-
-  selectpostpatchrfd[-grep("JS", rownames(selectpostpatchrfd)), ]
+  as.data.frame(selectpostpatchrfd[-grep("JS", rownames(selectpostpatchrfd)), ])
 selectpostpatchrfd <-
-  selectpostpatchrfd[-grep("MA", rownames(selectpostpatchrfd)), ]
+  as.data.frame(selectpostpatchrfd[-grep("MA", rownames(selectpostpatchrfd)), ])
 selectpostpatchrfd <-
-  selectpostpatchrfd[-grep("MF", rownames(selectpostpatchrfd)), ]
+  as.data.frame(selectpostpatchrfd[-grep("MF", rownames(selectpostpatchrfd)), ])
 
 selectprepatchrfd <-
-  selectPREpatchrfd[-grep("PREAIMVC", rownames(selectPREpatchrfd)),]
+  as.data.frame(selectprepatchrfd[-grep("PREAIMVC", rownames(selectprepatchrfd)),])
 selectprepatchrfd <-
-  selectprepatchrfd[-grep("PREBIMVC", rownames(selectprepatchrfd)),]
+  as.data.frame(selectprepatchrfd[-grep("PREBIMVC", rownames(selectprepatchrfd)),])
 selectprepatchrfd <-
-  selectprepatchrfd[-grep("GM", rownames(selectprepatchrfd)), ]
+  as.data.frame(selectprepatchrfd[-grep("GM", rownames(selectprepatchrfd)), ])
 selectprepatchrfd <-
-  selectprepatchrfd[-grep("JS", rownames(selectprepatchrfd)), ]
+  as.data.frame(selectprepatchrfd[-grep("JS", rownames(selectprepatchrfd)), ])
 selectprepatchrfd <-
-  selectprepatchrfd[-grep("MA", rownames(selectprepatchrfd)), ]
+  as.data.frame(selectprepatchrfd[-grep("MA", rownames(selectprepatchrfd)), ])
 selectprepatchrfd <-
-  selectprepatchrfd[-grep("MF", rownames(selectprepatchrfd)), ]
+  as.data.frame(selectprepatchrfd[-grep("MF", rownames(selectprepatchrfd)), ])
 
 selectmidpatchrfd <-
-  selectmidpatchrfd[-grep("MIDBIMVC", rownames(selectmidpatchrfd)),]
+  as.data.frame(selectmidpatchrfd[-grep("MIDBIMVC", rownames(selectmidpatchrfd)),])
 selectmidpatchrfd <-
-  selectmidpatchrfd[-grep("MIDAIMVC", rownames(selectmidpatchrfd)),]
+  as.data.frame(selectmidpatchrfd[-grep("MIDAIMVC", rownames(selectmidpatchrfd)),])
 selectmidpatchrfd <-
-  selectmidpatchrfd[-grep("GM", rownames(selectmidpatchrfd)), ]
+  as.data.frame(selectmidpatchrfd[-grep("GM", rownames(selectmidpatchrfd)), ])
 selectmidpatchrfd <-
-  selectmidpatchrfd[-grep("JS", rownames(selectmidpatchrfd)), ]
+  as.data.frame(selectmidpatchrfd[-grep("JS", rownames(selectmidpatchrfd)), ])
 selectmidpatchrfd <-
-  selectmidpatchrfd[-grep("MA", rownames(selectmidpatchrfd)), ]
+  as.data.frame(selectmidpatchrfd[-grep("MA", rownames(selectmidpatchrfd)), ])
 selectmidpatchrfd <-
-  selectmidpatchrfd[-grep("MF", rownames(selectmidpatchrfd)), ]
+  as.data.frame(selectmidpatchrfd[-grep("MF", rownames(selectmidpatchrfd)), ])
 
 selectpost48patchrfd <-
-  selectpost48patchrfd[-grep("POST48AIMVC", rownames(selectpost48patchrfd)),]
+  as.data.frame(selectpost48patchrfd[-grep("POST48AIMVC", rownames(selectpost48patchrfd)),])
 selectpost48patchrfd <-
-  selectpost48patchrfd[-grep("POST48BIMVC", rownames(selectpost48patchrfd)),]
+  as.data.frame(selectpost48patchrfd[-grep("POST48BIMVC", rownames(selectpost48patchrfd)),])
 selectpost48patchrfd <-
-  selectpost48patchrfd[-grep("GM", rownames(selectpost48patchrfd)), ]
+  as.data.frame(selectpost48patchrfd[-grep("GM", rownames(selectpost48patchrfd)), ])
 selectpost48patchrfd <-
-  selectpost48patchrfd[-grep("JS", rownames(selectpost48patchrfd)), ]
+  as.data.frame(selectpost48patchrfd[-grep("JS", rownames(selectpost48patchrfd)), ])
 selectpost48patchrfd <-
-  selectpost48patchrfd[-grep("MA", rownames(selectpost48patchrfd)), ]
+  as.data.frame(selectpost48patchrfd[-grep("MA", rownames(selectpost48patchrfd)), ])
 selectpost48patchrfd <-
-  selectpost48patchrfd[-grep("MF", rownames(selectpost48patchrfd)), ]
+  as.data.frame(selectpost48patchrfd[-grep("MF", rownames(selectpost48patchrfd)), ])
 
 #selectplacebo
 
-selectpreplaceborfd <- dfmaxplacebo[rownames(dfmaxplacebo) %like% "PRE",]
-selectpostplaceborfd <- dfmaxplacebo[rownames(dfmaxplacebo) %like% "POST",]
-selectmidplaceborfd <- dfmaxplacebo[rownames(dfmaxplacebo) %like% "MID",]
-selectpost48placeborfd <- dfmaxplacebo[rownames(dfmaxplacebo) %like% "POST48",]
+selectpreplaceborfd <- as.data.frame(dfrfdpb[rownames(dfrfdpb) %like% "PRE",])
+selectpostplaceborfd <- as.data.frame(dfrfdpb[rownames(dfrfdpb) %like% "POST",])
+selectmidplaceborfd <- as.data.frame(dfrfdpb[rownames(dfrfdpb) %like% "MID",])
+selectpost48placeborfd <- as.data.frame(dfrfdpb[rownames(dfrfdpb) %like% "POST48",])
+
+colnames(selectpreplaceborfd)  <- "rfd"
+colnames(selectpostplaceborfd)  <- "rfd"
+colnames(selectmidplaceborfd)  <- "rfd"
+colnames(selectpost48placeborfd)  <- "rfd"
 
 selectpostplaceborfd <-
-  selectpostplaceborfd[-grep("POST48", rownames(selectpostplaceborfd)),]
+  as.data.frame(selectpostplaceborfd[-grep("POST48", rownames(selectpostplaceborfd)),])
 selectpostplaceborfd <-
-  selectpostplaceborfd[-grep("POSTAIMVC", rownames(selectpostplaceborfd)),]
+  as.data.frame(selectpostplaceborfd[-grep("POSTAIMVC", rownames(selectpostplaceborfd)),])
 selectpostplaceborfd <-
-  selectpostplaceborfd[-grep("POSTBIMVC", rownames(selectpostplaceborfd)),]
+  as.data.frame(selectpostplaceborfd[-grep("POSTBIMVC", rownames(selectpostplaceborfd)),])
 selectpostplaceborfd <-
-  selectpostplaceborfd[-grep("BA", rownames(selectpostplaceborfd)),]
+  as.data.frame(selectpostplaceborfd[-grep("BA", rownames(selectpostplaceborfd)),])
 selectpostplaceborfd <-
-  selectpostplaceborfd[-grep("PN", rownames(selectpostplaceborfd)),]
+  as.data.frame(selectpostplaceborfd[-grep("PN", rownames(selectpostplaceborfd)),])
 
 selectpreplaceborfd <-
-  selectpreplaceborfd[-grep("PREAIMVC", rownames(selectpreplaceborfd)),]
+  as.data.frame(selectpreplaceborfd[-grep("PREAIMVC", rownames(selectpreplaceborfd)),])
 selectpreplaceborfd <-
-  selectpreplaceborfd[-grep("PREBIMVC", rownames(selectpreplaceborfd)),]
+  as.data.frame(selectpreplaceborfd[-grep("PREBIMVC", rownames(selectpreplaceborfd)),])
 selectpreplaceborfd <-
-  selectpreplaceborfd[-grep("BA", rownames(selectpreplaceborfd)), ]
+  as.data.frame(selectpreplaceborfd[-grep("BA", rownames(selectpreplaceborfd)), ])
 selectpreplaceborfd <-
-  selectpreplaceborfd[-grep("PN", rownames(selectpreplaceborfd)), ]
+  as.data.frame(selectpreplaceborfd[-grep("PN", rownames(selectpreplaceborfd)), ])
 
 selectmidplaceborfd <-
-  selectmidplaceborfd[-grep("MIDBIMVC", rownames(selectmidplaceborfd)),]
+  as.data.frame(selectmidplaceborfd[-grep("MIDBIMVC", rownames(selectmidplaceborfd)),])
 selectmidplaceborfd <-
-  selectmidplaceborfd[-grep("MIDAIMVC", rownames(selectmidplaceborfd)),]
+  as.data.frame(selectmidplaceborfd[-grep("MIDAIMVC", rownames(selectmidplaceborfd)),])
 selectmidplaceborfd <-
-  selectmidplaceborfd[-grep("BA", rownames(selectmidplaceborfd)), ]
+  as.data.frame(selectmidplaceborfd[-grep("BA", rownames(selectmidplaceborfd)), ])
 selectmidplaceborfd <-
-  selectmidplaceborfd[-grep("PN", rownames(selectmidplaceborfd)), ]
+  as.data.frame(selectmidplaceborfd[-grep("PN", rownames(selectmidplaceborfd)), ])
 
 selectpost48placeborfd <-
-  selectpost48placeborfd[-grep("POST48AIMVC", rownames(selectpost48placeborfd)),]
+  as.data.frame(selectpost48placeborfd[-grep("POST48AIMVC", rownames(selectpost48placeborfd)),])
 selectpost48placeborfd <-
-  selectpost48placeborfd[-grep("POST48BIMVC", rownames(selectpost48placeborfd)),]
+  as.data.frame(selectpost48placeborfd[-grep("POST48BIMVC", rownames(selectpost48placeborfd)),])
 selectpost48placeborfd <-
-  selectpost48placeborfd[-grep("BA", rownames(selectpost48placeborfd)), ]
+  as.data.frame(selectpost48placeborfd[-grep("BA", rownames(selectpost48placeborfd)), ])
 selectpost48placeborfd <-
-  selectpost48placeborfd[-grep("PN", rownames(selectpost48placeborfd)), ]
+  as.data.frame(selectpost48placeborfd[-grep("PN", rownames(selectpost48placeborfd)), ])
 

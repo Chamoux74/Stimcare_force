@@ -35,7 +35,7 @@ time <- function(input) {as.data.frame(input)}
 dflistforce <- lapply(valuesforce1 , force)
 dflisttime <- lapply(valuestime1 , time)
 
-dflistforce <- mapply(cbind, dflistforce , dflisttime , SIMPLIFY = FALSE)
+dftimeforcepatch <- mapply(cbind, dflistforce , dflisttime , SIMPLIFY = FALSE)
 
 selectmax <- function(y) {max(y$dataf)}
 dfmax <- as.data.frame(lapply(dflistforce , selectmax))
@@ -49,26 +49,39 @@ dfmax <- cbind(dfmax , newton)
 
 #calcule RFD
 
+seuil <- 2
+
+# Parcourir chaque data frame de la liste
+for (i in 1:length(dftimeforcepatch)) {
+  df1 <- dftimeforcepatch[[i]]
+
+  # Trouver la première ligne où deux lignes consécutives sont supérieures au seuil
+  start_row <- 2
+  for (j in start_row:nrow(df1)) {
+    if (((df1[j, 1] - df1[(j - 1), 1]) > seuil && (df1[(j + 1), 1] - df1[j, 1]) > seuil)) {
+      start_row <- j
+      break
+    }
+  }
+
+  # Conserver toutes les lignes à partir de la première ligne où deux lignes consécutives sont supérieures au seuil
+  dftimeforcepatch[[i]] <- as.data.frame(df1[start_row:nrow(df1),])
+}
+
+rem <- function (remove) {remove[c(1:21) , ]}
+data200mspatch <- lapply(dftimeforcepatch , rem)
+
+
 newton <- function(nt){nt$dataf*9.81}
-dflistforce <- lapply(dflistforce , newton)
-dftimeforce <- mapply(cbind, dflistforce , dflisttime , SIMPLIFY = FALSE)
+data200mspatch <- lapply(data200mspatch , newton)
+data200mspatch <- lapply(data200mspatch , as.data.frame)
 
-dftimeforce <- lapply(dftimeforce , setNames , rn)
+rate <- "rfd"
 
-diferencepatch <- lapply(dftimeforce , dif)
+data200mspatch <- lapply(data200mspatch , setNames , rate)
 
-diferencepatch <- lapply(diferencepatch , add)
-diferencepatch <- mapply(cbind , diferencepatch , dftimeforce , SIMPLIFY = FALSE)
-renames <- c("diff", "force" , "temps")
-diferencepatch <- lapply(diferencepatch , setNames , renames)
+moy <- function (m) {mean(m$rfd)}
 
-
-#rem <- function (remove) {remove[-c(1:which(remove$diff > 2)) , ]}
-#diferencepatch <- lapply(diferencepatch , rem)
-
-#rem <- function (remove) {remove[c(1:21) , ]}
-#diferencepatch <- lapply(diferencepatch , rem)
-
-#rfdpatch <- as.data.frame(lapply(diferencepatch , moy))
-#rfdpatch <- rfdpatch/0.2
-#rfdpatch <- t(rfdpatch)
+dfrfdpatch <- as.data.frame(lapply(data200mspatch , moy))
+dfrfdpatch<- dfrfdpatch/0.2
+dfrfdpatch <- t(dfrfdpatch)

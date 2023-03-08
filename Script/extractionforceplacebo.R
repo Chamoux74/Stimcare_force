@@ -48,20 +48,6 @@ dfmaxplacebo <- cbind(dfmaxplacebo , newtonpb)
 
 #calcule RFD
 
-newton <- function(nt){nt$dataf*9.81}
-dflistforcepb <- lapply(dflistforcepb , newton)
-dftimeforcepb <- mapply(cbind, dflistforcepb , dflisttimepb , SIMPLIFY = FALSE)
-rn <- c("force", "time")
-dftimeforcepb <- lapply(dftimeforcepb , setNames , rn)
-
-dif <- function(d) {diff(d$force)}
-diference <- lapply(dftimeforcepb , dif)
-add <- function(ad) {ad <- c(0,ad)}
-diference <- lapply(diference , add)
-diference <- mapply(cbind , diference , dftimeforcepb , SIMPLIFY = FALSE)
-renames <- c("diff", "force" , "temps")
-diference <- lapply(diference, setNames , renames)
-
 seuil <- 2
 
 # Parcourir chaque data frame de la liste
@@ -71,25 +57,30 @@ for (i in 1:length(dftimeforcepb)) {
 # Trouver la première ligne où deux lignes consécutives sont supérieures au seuil
 start_row <- 2
   for (j in start_row:nrow(df)) {
-    if (((df[j, 1] - df[(j - 1), 1]) & (df[(j + 1), 1] - df[j, 1]) > seuil)) {
+    if (((df[j, 1] - df[(j - 1), 1]) > seuil && (df[(j + 1), 1] - df[j, 1]) > seuil)) {
       start_row <- j
       break
     }
   }
 
 # Conserver toutes les lignes à partir de la première ligne où deux lignes consécutives sont supérieures au seuil
-  dftimeforcepb[[i]] <- df[start_row:nrow(df),]
+  dftimeforcepb[[i]] <- as.data.frame(df[start_row:nrow(df),])
 }
 
-rem <- function (remove) {remove[-c(1:which(remove$diff > 2)) , ]}
-test <- lapply(diference , start_row)
-
 rem <- function (remove) {remove[c(1:21) , ]}
-diference <- lapply(diference , rem)
+data200mspb <- lapply(dftimeforcepb , rem)
 
-moy <- function (m) {mean(m$force)}
 
-rfd <- as.data.frame(lapply(diference , moy))
-rfd <- rfd/0.2
-rfdplacebo <- t(rfd)
+newton <- function(nt){nt$dataf*9.81}
+data200mspb <- lapply(data200mspb , newton)
+data200mspb <- lapply(data200mspb , as.data.frame)
 
+rate <- "rfd"
+
+data200mspb <- lapply(data200mspb , setNames , rate)
+
+moy <- function (m) {mean(m$rfd)}
+
+dfrfdpb <- as.data.frame(lapply(data200mspb , moy))
+dfrfdpb <- dfrfdpb/0.2
+dfrfdpb <- t(dfrfdpb)
