@@ -292,3 +292,30 @@ ttesttime <- dftotrfd %>%
     p.adjust.method = "bonferroni"
   )
 ttesttime
+
+#plot avec pvalue
+
+ttestrfdinstantmesure <- ttestrfdinstantmesure %>% add_xy_position(x = "instant_mesure")
+ttestrfdinstantmesure$xmin <- c(2 , 2 , 2 , 3 , 3 , 4)
+ttestrfdinstantmesure$xmax <- c(3 , 4 , 1 , 4 , 1 , 1)
+
+plotrfd +
+  stat_pvalue_manual(
+    ttestrfdinstantmesure,
+    tip.length = 0 ,
+    hide.ns = FALSE ,
+    label = "p = {p.adj}"  , y.position = c(3600, 3750, 3400 , 1550 , 1350 , 1200)
+  )
+
+ttesttime <- ttesttime %>% add_xy_position(x = "instant_mesure")
+ttesttime$xmin <- c(2 , 2 , 2 , 3 , 3 , 4 , 2 , 2 , 2 , 3 , 3 , 4)
+ttesttime$xmax <- c(3 , 4 , 1 , 4 , 1 , 1, 3 , 4 , 1 , 4 , 1 , 1)
+
+plotrfd +
+  stat_pvalue_manual(
+    ttesttime,
+    tip.length = 0 ,
+    hide.ns = TRUE ,
+    label = "p = {p.adj}"  , y.position = , color = "#FC4E07"
+  )
+

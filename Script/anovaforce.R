@@ -246,6 +246,8 @@ ttest2 <- test2 %>%
     p.adjust.method = "bonferroni"
   )
 
+ttest2
+
 ttest1 <- test %>%
   pairwise_t_test(
     IMVC ~ instant_mesure , paired = TRUE,
