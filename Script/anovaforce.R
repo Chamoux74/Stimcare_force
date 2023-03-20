@@ -501,6 +501,171 @@ plotpostpost48 +
 
 #Analyse PRE POST48
 
+test9 <- test[!test$instant_mesure %in% c("post" ,"mid") ,]
+
+ttest7 <- test9 %>%
+  group_by(condition) %>%
+  pairwise_t_test(
+    IMVC ~ instant_mesure , paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
+
+ttest7
+
+ttest8 <- test9 %>%
+  group_by(instant_mesure) %>%
+  pairwise_t_test(
+    IMVC ~ condition , paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
+
+ttest8
+
+#plot pre post48
+
+plotprepost48 <- ggboxplot(
+  test9 ,
+  x = "instant_mesure",
+  y = "IMVC",
+  color = "condition",
+  palette = c("#00AFBB" , "#FC4E07"),
+  order = c(
+    "pre" ,
+    #"mid" ,
+    #"post" ,
+    "post48"
+  ),
+  add = "jitter" ,
+  ylab = "IMVC",
+  xlab = "instant_mesure" ,
+  title = "IMVC_patch_placebo"
+) +
+  stat_summary(
+    geom = "point",
+    fun.y = mean , aes(group = condition) ,
+    shape = 20 ,
+    size = 4 ,
+    position = position_dodge2(width = 0.75,
+                               preserve = "single")
+  ) +
+  theme_bw()
+
+plotprepost48
+
+ttesttime7 <- ttest7[ttest7$condition == "patch",] %>% add_xy_position(x = "instant_mesure")
+ttesttime8 <- ttest7[ttest7$condition == "placebo",] %>% add_xy_position(x = "instant_mesure")
+
+ttesttime7$xmin <- c(1.8)
+ttesttime7$xmax <- c(0.8)
+ttesttime8$xmin <- c(2.2)
+ttesttime8$xmax <- c(1.2)
+
+ttest8 <- ttest8 %>% add_xy_position(x= "instant_mesure")
+
+ttestcondi <- ttest8[ttest8$instant_mesure == "post48" , ]
+ttestcondi1 <- ttest8[ttest8$instant_mesure == "pre" , ]
+
+ttestcondi$xmin <- c(2)
+ttestcondi$xmax <- c(2)
+ttestcondi1$xmin <- c(1)
+ttestcondi1$xmax <- c(1)
+
+ttest8 <- rbind(ttestcondi , ttestcondi1)
+
+plotprepost48 +
+  stat_pvalue_manual(
+    ttesttime7,
+    tip.length = 0 ,
+    hide.ns = FALSE ,
+    label = "p = {p.adj}"  , y.position = 1650 , color = "#00AFBB"
+  ) +
+  stat_pvalue_manual(
+    ttesttime8,
+    tip.length = 0 ,
+    hide.ns = FALSE ,
+    label = "p = {p.adj}"  , y.position = 670 , color = "#FC4E07"
+  ) +
+  stat_pvalue_manual(
+    ttest8,
+    tip.length = 0 ,
+    hide.ns = FALSE ,
+    label = "p = {p.adj}"  , y.position = c(825 , 825) ,
+  )
+
+#analyse indiv pre post48
+
+testindiv2 <- test9[test9$condition == "patch" , ]
+testindiv3 <- test9[test9$condition == "placebo" , ]
+
+testindiv2$instant_mesure <- factor(testindiv2$instant_mesure , levels = c("pre" , "post48"))
+testindiv3$instant_mesure <- factor(testindiv3$instant_mesure , levels = c("pre" , "post48"))
+
+plotindiv <- ggplot(testindiv3, aes( x = instant_mesure , y = IMVC )) +
+  theme_bw() +  #theme(
+  #panel.grid.major.x = element_blank(),
+  #panel.grid.minor.x = element_blank()
+  #) +
+  geom_line(
+    aes(
+      x = instant_mesure ,
+      group = sujet ,
+      color = as.factor(sujet)
+    ) ,
+    size = 0.7 ,
+    position = "identity" ,
+    linetype = "dashed"
+  ) +
+  geom_point(
+    aes(x = instant_mesure , group = sujet),
+    shape = 21,
+    colour = "black",
+    size = 2,
+    position = "identity"
+  ) +
+  geom_boxplot( outlier.shape = NA, coef = 0 ,
+                aes(x = instant_mesure , y = IMVC) ,
+                width = .35,
+                fill = "white" , alpha = 0.3
+  )  +
+  scale_color_manual(
+    values = c(
+      #"purple" ,
+      "#0416f5" ,
+                "#b00000" ,
+                "#19a3e8" ,
+                "#fd4c4c" ,
+                "#E7B800" ,
+                "#5ef11a" ,
+                "#c58ede" ,
+                "#3e020b" ,
+                "#febd02" ,
+                "#16161e" ,
+                "#24844b" ,
+                "#f604fd" ,
+                "#439bab" ,
+                "#c5c896" ,
+                "#6e711d" ,
+                "#109c02" #,
+                #"#b71385"
+    )) +
+  labs(color = "sujet") +
+  stat_summary(
+    geom = "errorbar" ,
+    fun.data = mean_sd ,
+    colour = "black" ,
+    size = 1 ,
+    width = 0.2
+  ) +
+  stat_summary(
+    fun = mean,
+    shape = 17 ,
+    size = 1 ,
+    position = "identity",
+    color = "#ff0000"
+  ) +
+  labs(title = "IMVC_placebo")
+
+plotindiv
 
 
 #analyse plus petite différence significative
