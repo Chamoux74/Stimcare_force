@@ -3,6 +3,8 @@ library(ggpubr)
 library(rstatix)
 library(ggplot2)
 library(agricolae)
+library(knitr)
+library(kableExtra)
 
 #selectpatch
 
@@ -201,9 +203,9 @@ dftotrfd <-
     selectmidpatchrfd ,
     selectmidplaceborfd ,
     selectpostpatchrfd ,
-    selectpostplaceborfd ,
-    selectpost48patchrfd ,
-    selectpost48placeborfd
+    selectpostplaceborfd #,
+    #selectpost48patchrfd ,
+    #selectpost48placeborfd
   )
 
 #plot
@@ -261,7 +263,11 @@ res.aov1 <- rstatix::anova_test(
   detailed = TRUE,
 )
 
-get_anova_table(res.aov1 , correction = "auto")
+anova2way <- as.data.frame(get_anova_table(res.aov1 , correction = "auto"))
+
+head(anova2way) %>%
+  kable(format = "latex") %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
 
 ttestrfdinstantmesure <- dftotrfd %>%
   pairwise_t_test(
@@ -269,7 +275,7 @@ ttestrfdinstantmesure <- dftotrfd %>%
     p.adjust.method = "bonferroni"
   )
 
-ttestrfdinstantmesure
+ttestrfdinstantmesure <- as.data.frame(ttestrfdinstantmesure)
 
 one.way <- dftotrfd %>%
   group_by(instant_mesure) %>%
