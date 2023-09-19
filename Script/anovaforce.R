@@ -3,6 +3,8 @@ library(ggpubr)
 library(rstatix)
 library(ggplot2)
 library(agricolae)
+library(kableExtra)
+library(stargazer)
 
 #selectpatch
 
@@ -87,56 +89,6 @@ colnames(selectpost48patchforce) <- c("force" , "IMVC" , "instant_mesure" , "con
 selectpost48placeboforce <- cbind(selectpost48placeboforce , post48 , placebo)
 colnames(selectpost48placeboforce) <- c("force" , "IMVC" , "instant_mesure" , "condition")
 
-dftot <-
-  rbind(
-    selectprepatchforce ,
-    selectpreplaceboforce ,
-    selectmidpatchforce ,
-    selectmidplaceboforce ,
-    selectpostpatchforce ,
-    selectpostplaceboforce ,
-    selectpost48patchforce ,
-    selectpost48placeboforce
-  )
-
-
-
-plotforce <- ggboxplot(
-  dftot ,
-  x = "instant_mesure",
-  y = "IMVC",
-  color = "condition",
-  palette = c("#00AFBB" , "#FC4E07"),
-  order = c(
-    "pre" ,
-    "mid" ,
-    "post" ,
-    "post48"
-  ),
-  add = "jitter" ,
-  ylab = "IMVC",
-  xlab = "instant_mesure" ,
-  title = "IMVC_patch_placebo"
-) +
-  stat_summary(
-    geom = "point",
-    fun.y = mean , aes(group = condition) ,
-    shape = 20 ,
-    size = 4 ,
-    position = position_dodge2(width = 0.75,
-                               preserve = "single")
-  ) +
-  stat_summary(
-    geom = "errorbar" ,
-    fun.data = mean_sd , aes(group = condition) ,
-    colour = "grey" ,
-    linetype = "dotted" ,
-    size = 1 , position = position_dodge2(width = 0.75,
-                                          preserve = "single")
-  )
-
-plotforce
-
 shapiro.test(selectprepatchforce$IMVC)
 shapiro.test(selectpreplaceboforce$IMVC)
 shapiro.test(selectmidpatchforce$IMVC)
@@ -145,7 +97,6 @@ shapiro.test(selectpostpatchforce$IMVC)
 shapiro.test(selectpostplaceboforce$IMVC)
 shapiro.test(selectpost48patchforce$IMVC)
 shapiro.test(selectpost48placeboforce$IMVC)
-
 
 
 identify_outliers(selectprepatchforce , IMVC , variable = NULL)
@@ -157,9 +108,6 @@ identify_outliers(selectpostplaceboforce , IMVC , variable = NULL)
 identify_outliers(selectpost48patchforce , IMVC , variable = NULL)
 identify_outliers(selectpost48placeboforce , IMVC , variable = NULL)
 
-
-ggqqplot(dftot, "IMVC", ggtheme = theme_bw()) +
-  facet_grid(instant_mesure ~ condition , labeller = "label_both")
 
 sujetprepatch <- gsub("^[^_]+_+[^A-Z]|_[^_]+$" , "" , row.names(selectprepatchforce))
 
@@ -214,58 +162,139 @@ dftot <-
     selectpost48placeboforce
   )
 
-test <- group_by(.data = dftot, sujet, instant_mesure , condition) %>%
+DFIMVCmax <- group_by(.data = dftot, sujet, instant_mesure , condition) %>%
   summarise_at(vars(IMVC), list(IMVC = max)) %>%
   as.data.frame()
 
-test2 <- group_by(.data = dftot, sujet, instant_mesure , condition) %>%
-  summarise_at(vars(IMVC), list(forcemean = mean)) %>%
+DFIMVCmean <- group_by(.data = dftot, sujet, instant_mesure , condition) %>%
+  summarise_at(vars(IMVC), list(IMVCmean = mean)) %>%
   as.data.frame()
 
-#Sans la mesure en post48
-
-test3 <- test[!test$instant_mesure == "post48" ,]
-test4 <-test2[!test2$instant_mesure == "post48", ]
+# #Sans la mesure en post48
+#
+DFIMVCmax_sanspost48 <- filter(DFIMVCmax, instant_mesure  != "post48")
+DFIMVCmean_sanspost48 <- filter(DFIMVCmean, instant_mesure != "post48")
 
 #analyse
 
+model <- lm(IMVC~condition*instant_mesure, data = DFIMVCmax_sanspost48)
+plot(model, 1)
+levene_test(data = DFIMVCmax_sanspost48, IMVC~condition*instant_mesure)
+
 res.aov1 <- rstatix::anova_test(
-  data = test4, dv = forcemean, wid = sujet ,
+  data = DFIMVCmax, dv = IMVC, wid = sujet ,
   within = c(condition, instant_mesure) , effect.size = "ges",
   detailed = TRUE,
 )
 
-get_anova_table(res.aov1 , correction = "auto")
+res.aov1
+
+table1 <- get_anova_table(res.aov1 , correction = "GG")
+kable(ttesttime1,format = "latex")
 
 res.aov <- rstatix::anova_test(
-  data = test3, dv = IMVC, wid = sujet ,
+  data = DFIMVCmean_sanspost48, dv = IMVCmean, wid = sujet ,
   within = c(condition, instant_mesure) , effect.size = "ges",
   detailed = TRUE,
 )
 
-get_anova_table(res.aov , correction = "auto")
+res.aov
 
-one.way <- test3 %>%
+#anova 1 way IMVCmax
+
+one.way <- DFIMVCmax_sanspost48 %>%
   group_by(instant_mesure) %>%
   anova_test(dv = IMVC, wid = sujet, within = condition) %>%
   get_anova_table() %>%
   adjust_pvalue(method = "bonferroni")
 one.way
 
-one.way1 <- test3 %>%
+one.way1 <- DFIMVCmax %>%
   group_by(condition) %>%
   anova_test(dv = IMVC, wid = sujet, within = instant_mesure) %>%
   get_anova_table() %>%
   adjust_pvalue(method = "bonferroni")
 one.way1
 
-ttesttime <- test3 %>%
+
+
+#anova 1 way IMVCmean
+
+one.way2 <- DFIMVCmean_sanspost48 %>%
+  group_by(instant_mesure) %>%
+  anova_test(dv = IMVCmean, wid = sujet, within = condition) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+one.way2
+
+one.way3 <- DFIMVCmean_sanspost48 %>%
+  group_by(condition) %>%
+  anova_test(dv = IMVCmean, wid = sujet, within = instant_mesure) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+one.way3
+
+#ttest IMVCmax
+
+DFIMVCmax$instant_mesure <- factor(DFIMVCmax$instant_mesure, levels = c("pre", "mid", "post", "post48"))
+DFIMVCmax_sanspost48$instant_mesure <-
+  factor(DFIMVCmax_sanspost48$instant_mesure,
+         levels = c("pre", "mid", "post"))
+
+ttesttime1 <- DFIMVCmax_sanspost48 %>%
   group_by(condition) %>%
   pairwise_t_test(
     IMVC ~ instant_mesure, paired = TRUE,
     p.adjust.method = "bonferroni"
   )
+ttesttime1
+
+ttestcond1 <- DFIMVCmax_sanspost48 %>%
+  group_by(instant_mesure) %>%
+  pairwise_t_test(
+    IMVC ~ condition, paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
+ttestcond1
+
+ESIMVCmax <-
+  DFIMVCmax_sanspost48 %>% group_by(condition) %>% cohens_d(IMVC ~ instant_mesure, paired = T)
+
+ESmax <- select(ESIMVCmax, effsize, magnitude)
+
+ttesttime1 <- cbind(ttesttime1, ESmax)
+
+ESIMVCmax1 <-
+  DFIMVCmax %>% group_by(condition) %>% cohens_d(IMVC ~ instant_mesure, paired = T)
+
+ESmax1 <- select(ESIMVCmax1, effsize, magnitude)
+
+ttesttime1 <- cbind(ttesttime1, ESmax1)
+
+
+#ttesT IMVCmean
+
+ttesttime <- DFIMVCmean %>%
+  group_by(condition) %>%
+  pairwise_t_test(
+    IMVCmean ~ instant_mesure, paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
 ttesttime
+
+ttestcond <- DFIMVCmax1 %>%
+  group_by(instant_mesure) %>%
+  pairwise_t_test(
+    IMVC ~ condition, paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
+ttestcond
+
+ESIMVCmax <-
+  DFIMVCmax %>% group_by(condition) %>% cohens_d(IMVC ~ instant_mesure, paired = T)
+
+ESIMVCmax1 <-
+  DFIMVCmax %>% group_by(instant_mesure) %>% cohens_d(IMVC ~ condition, paired = T)
 
 plotfmax <- ggboxplot(
   test3 ,
@@ -279,10 +308,10 @@ plotfmax <- ggboxplot(
     "post" #,
     #"post48"
   ),
-  add = "jitter" ,
+  add = "jitter" ,size = 0.6 , shape = "condition" ,
   ylab = "IMVC",
   xlab = "instant_mesure" ,
-  title = "IMVC_patch_placebo"
+  title = "IMVC_patch_placebo_PRE/MID/POST"
 ) +
   stat_summary(
     geom = "point",
@@ -292,7 +321,15 @@ plotfmax <- ggboxplot(
     position = position_dodge2(width = 0.75,
                                preserve = "single")
   ) +
-  theme_bw()
+  theme_bw() + theme(
+    plot.title = element_text(hjust = 0.5 , size = 12 , face = "bold") ,
+    axis.text = element_text(size = 7) ,
+    axis.title = element_text(size = 8 , face = "bold") ,
+    legend.position = "right" ,
+    legend.title = element_text(size = 8 , face = "bold") ,
+    legend.text = element_text(size = 6) ,
+    legend.background = element_rect(color = "black" , size = 0.1)
+  )
 
 plotfmax
 
@@ -323,17 +360,26 @@ testplot
 
 #analyse indiv pre mid post
 
-testindiv <- test3[test3$condition == "patch" , ]
-testindiv1 <- test3[test3$condition == "placebo" , ]
+test3$instant_mesure <-
+  factor(test3$instant_mesure , levels = c("pre" , "mid", "post"))
 
-testindiv$instant_mesure <- factor(testindiv$instant_mesure , levels = c("pre" , "mid", "post"))
-testindiv1$instant_mesure <- factor(testindiv1$instant_mesure , levels = c("pre" , "mid" , "post"))
-
-plotindiv <- ggplot(testindiv1, aes( x = instant_mesure , y = IMVC )) +
-  theme_bw() +  #theme(
-  #panel.grid.major.x = element_blank(),
-  #panel.grid.minor.x = element_blank()
-  #) +
+plotindiv3 <- ggplot(test3, aes( x = instant_mesure , y = IMVC )) +
+  theme_bw() +  theme(
+    plot.title = element_text(hjust = 0.5 , size = 12 , face = "bold") ,
+    axis.text = element_text(size = 7) ,
+    axis.title = element_text(size = 8 , face = "bold") ,
+    strip.background = element_rect(color = "black" , fill = "#373737")
+    ,
+    strip.text = element_text(
+      color = "white" ,
+      face = "bold" ,
+      size = 8
+    ) ,
+    legend.position = "right" ,
+    legend.title = element_text(size = 8 , face = "bold") ,
+    legend.text = element_text(size = 6) ,
+    legend.background = element_rect(color = "black" , size = 0.1)
+  ) +
   geom_line(
     aes(
       x = instant_mesure ,
@@ -392,19 +438,21 @@ plotindiv <- ggplot(testindiv1, aes( x = instant_mesure , y = IMVC )) +
     position = "identity",
     color = "#ff0000"
   ) +
-  labs(title = "IMVC_placebo")
+  facet_wrap(vars(condition) , scales = "free_y") +
+  labs(title = "IMVC_individual_variation_PRE/MID/POST")
 
-plotindiv
+plotindiv3
+
 
 #analyse PRE/POST
 
-test5 <- test3[!test3$instant_mesure == "mid", ]
+test5 <- filter(DFIMVCmax1, instant_mesure != "mid")
 test6 <- test4[!test4$instant_mesure == "mid", ]
 
 ttest2 <- test5 %>%
-  group_by(condition) %>%
+  group_by(instant_mesure) %>%
   pairwise_t_test(
-    IMVC ~ instant_mesure , paired = TRUE,
+    IMVC ~ condition , paired = TRUE,
     p.adjust.method = "bonferroni"
   )
 
@@ -465,10 +513,10 @@ plotpostpost48 <- ggboxplot(
     "post" ,
     "post48"
   ),
-  add = "jitter" ,
+  add = "jitter" , size = 0.6 , shape = "condition" ,
   ylab = "IMVC",
   xlab = "instant_mesure" ,
-  title = "IMVC_patch_placebo"
+  title = "IMVC_patch_placebo_POST/POST48"
 ) +
   stat_summary(
     geom = "point",
@@ -478,19 +526,36 @@ plotpostpost48 <- ggboxplot(
     position = position_dodge2(width = 0.75,
                                preserve = "single")
   ) +
-  theme_bw()
+  theme_bw() +theme(
+    plot.title = element_text(hjust = 0.5 , size = 12 , face = "bold") ,
+    axis.text = element_text(size = 7) ,
+    axis.title = element_text(size = 8 , face = "bold") ,
+    legend.position = "right" ,
+    legend.title = element_text(size = 8 , face = "bold") ,
+    legend.text = element_text(size = 6) ,
+    legend.background = element_rect(color = "black" , size = 0.1)
+  ) +
+  ylim(500, 1750)
 
 plotpostpost48
 
-ttesttime5 <- ttest5[ttest5$condition == "patch",] %>% add_xy_position(x = "instant_mesure")
-ttesttime6 <- ttest5[ttest5$condition == "placebo",] %>% add_xy_position(x = "instant_mesure")
+ttesttime5 <-
+  ttest5[ttest5$condition == "patch", ] %>% add_xy_position(x = "instant_mesure")
+ttesttime6 <-
+  ttest5[ttest5$condition == "placebo", ] %>% add_xy_position(x = "instant_mesure")
+
+ttesttime5$xmin <- 0.8
+ttesttime5$xmax <- 1.8
+ttesttime6$xmin <- 1.2
+ttesttime6$xmax <- 2.2
+
 
 plotpostpost48 +
   stat_pvalue_manual(
     ttesttime5,
     tip.length = 0 ,
     hide.ns = FALSE ,
-    label = "p = {p.adj}"  , y.position = , color = "#00AFBB"
+    label = "p = {p.adj}"  , y.position =1650 , color = "#00AFBB"
   ) +
   stat_pvalue_manual(
     ttesttime6,
@@ -535,10 +600,10 @@ plotprepost48 <- ggboxplot(
     #"post" ,
     "post48"
   ),
-  add = "jitter" ,
+  add = "jitter" , size = 0.6 , shape = "condition" ,
   ylab = "IMVC",
   xlab = "instant_mesure" ,
-  title = "IMVC_patch_placebo"
+  title = "IMVC_patch_placebo_PRE/POST48"
 ) +
   stat_summary(
     geom = "point",
@@ -548,7 +613,15 @@ plotprepost48 <- ggboxplot(
     position = position_dodge2(width = 0.75,
                                preserve = "single")
   ) +
-  theme_bw()
+  theme_bw() + theme(
+    plot.title = element_text(hjust = 0.5 , size = 12 , face = "bold") ,
+    axis.text = element_text(size = 7) ,
+    axis.title = element_text(size = 8 , face = "bold") ,
+    legend.position = "right" ,
+    legend.title = element_text(size = 8 , face = "bold") ,
+    legend.text = element_text(size = 6) ,
+    legend.background = element_rect(color = "black" , size = 0.1)
+  )
 
 plotprepost48
 
@@ -583,28 +656,37 @@ plotprepost48 +
     ttesttime8,
     tip.length = 0 ,
     hide.ns = FALSE ,
-    label = "p = {p.adj}"  , y.position = 670 , color = "#FC4E07"
+    label = "p = {p.adj}"  , y.position = 670 , color = "#FC4E07" , linetype = "dashed"
   ) +
   stat_pvalue_manual(
     ttest8,
     tip.length = 0 ,
     hide.ns = FALSE ,
-    label = "p = {p.adj}"  , y.position = c(825 , 825) ,
+    label = "p = {p.adj}" , y.position = c(825 , 825)
   )
 
 #analyse indiv pre post48
 
-testindiv2 <- test9[test9$condition == "patch" , ]
-testindiv3 <- test9[test9$condition == "placebo" , ]
+test9$instant_mesure <- factor(test9$instant_mesure , levels = c("pre" , "post48"))
 
-testindiv2$instant_mesure <- factor(testindiv2$instant_mesure , levels = c("pre" , "post48"))
-testindiv3$instant_mesure <- factor(testindiv3$instant_mesure , levels = c("pre" , "post48"))
 
-plotindiv <- ggplot(testindiv3, aes( x = instant_mesure , y = IMVC )) +
-  theme_bw() +  #theme(
-  #panel.grid.major.x = element_blank(),
-  #panel.grid.minor.x = element_blank()
-  #) +
+plotindiv2 <- ggplot(test9, aes( x = instant_mesure , y = IMVC )) +
+  theme_bw() + theme(
+    plot.title = element_text(hjust = 0.5 , size = 12 , face = "bold") ,
+    axis.text = element_text(size = 7) ,
+    axis.title = element_text(size = 8 , face = "bold") ,
+    strip.background = element_rect(color = "black" , fill = "#373737")
+    ,
+    strip.text = element_text(
+      color = "white" ,
+      face = "bold" ,
+      size = 8
+    ) ,
+    legend.position = "right" ,
+    legend.title = element_text(size = 8 , face = "bold") ,
+    legend.text = element_text(size = 6) ,
+    legend.background = element_rect(color = "black" , size = 0.1)
+  ) +
   geom_line(
     aes(
       x = instant_mesure ,
@@ -663,10 +745,10 @@ plotindiv <- ggplot(testindiv3, aes( x = instant_mesure , y = IMVC )) +
     position = "identity",
     color = "#ff0000"
   ) +
-  labs(title = "IMVC_placebo")
+  facet_wrap(vars(condition) , scales = "free_y") +
+  labs(title = "IMVC_individual_variation_PRE/POST48")
 
-plotindiv
-
+plotindiv2
 
 #analyse plus petite différence significative
 
