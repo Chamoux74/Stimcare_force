@@ -6,7 +6,7 @@ library(dplyr)
 
 forcepatch <-
   list.files(
-    path = "C:/Users/maxch/Git/FORCE/Data/PATCH",
+    path = "Data/PATCH",
     pattern = "\\.xml",
     all.files = TRUE,
     full.names = TRUE

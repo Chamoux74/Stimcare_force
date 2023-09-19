@@ -6,7 +6,7 @@ library(dplyr)
 
 forceplacebo <-
   list.files(
-    path = "C:/Users/maxch/Git/FORCE/Data/PLACEBO",
+    path = "Data/PLACEBO",
     pattern = "\\.xml",
     all.files = TRUE,
     full.names = TRUE
