@@ -1,6 +1,5 @@
 library(lme4)
 library(lmerTest)
-require(nlme)
 library(ggplot2)
 library(outliers)
 library(kableExtra)
@@ -49,7 +48,7 @@ DFIMVCmax_sanspost48$condition <- factor(DFIMVCmax_sanspost48$condition, levels 
 modele_mixte1 <-
   lme4::lmer(
     IMVC ~ condition * instant_mesure + (1 |
-                                           sujet/journee/Machine/condition),
+                                           sujet/condition),
     data = DFIMVCmax_sanspost48,
     REML = FALSE
   )
@@ -94,14 +93,13 @@ ggplot(DFclean, aes(x=residus)) +
 ggplot(DFclean, aes(sample=residus))+stat_qq()
 
 #normality random parameters model lmer
-
-aleatoires <- lmer(FMD~1+(1|sujet), data=test_clean3)
+aleatoires <- lmer(IMVC~1+(1|sujet/condition), data= DFIMVCmax_sanspost48)
 
 pr01 <- profile(aleatoires)
 xyplot(pr01, aspect = 1.3, layout=c(3,1))
 xyplot(pr01, aspect = 1.3, layout=c(3,1), absVal=T)
 
-r_int<- ranef(modelemixte3)$sujet$"(Intercept)"
+r_int<- ranef(modele_mixte1)$sujet$"(Intercept)"
 qqnorm(r_int)
 shapiro.test(r_int)
 
@@ -111,49 +109,45 @@ splom(pr01)
 
 #Testting interest of random effect lmer
 
-ranova(modelemixte3)
+ranova(modele_mixte1)
 
 #plot interest of random effect
 
-dotplot(ranef(modelemixte3, condVar=T))
+dotplot(ranef(modele_mixte1, condVar=T))
 
 #ICC for random factor Sujet
 
-icc(modelemixte3)
+
+icc(modele_mixte1)
 
 #test effet fixe
 
-modelemixte4 <- lmer(FMD ~ condition:instant + (1|sujet), data = test_clean3, REML = F)
-
-anova(modelemixte3, modelemixte4)
-
-#test fixed and random effects
-
-st <- step(modelemixte3) # this function test each fixed and random effect of model and determine
-#if there is some effects who are not necessary to the mdoel
-st
-
-#plot(st)
+anova(modele_mixte1)
 
 #determination of variance in model trough F test value
 
-anova(modelemixte3, type = 1)
+anova(modele_mixte1, type= 3)
 
 # effect size
 
-r.squaredGLMM(modelemixte3) # only for normal distributed variable for each condition
-r.squaredLR(modelemixte3) # ok for all, with adjusted r squared which is more precise
+modele_mixte1_1 <-
+  nlme::lme(
+    IMVC ~ condition * instant_mesure,
+    data = DFIMVCmax_sanspost48,
+    random = ~ 1 | sujet / condition,
+    method = "ML"
+  )
 
-#testing contrast
+r.squaredGLMM(modele_mixte1) # only for normal distributed variable for each condition
+r.squaredLR(modele_mixte1_1) # ok for all, with adjusted r squared which is more precise
 
-contrasts(test_clean3$instant)
 
 #contr.instant(3, base = 1, contrasts = TRUE, sparse = FALSE)
 
 #interaction test
 
-testInteractions(modelemixte3)
-means <- interactionMeans(modelemixte3)
+testInteractions(modele_mixte1)
+means <- interactionMeans(modele_mixte1)
 
 plot(means)
 
