@@ -10,11 +10,10 @@ library(MuMIn)
 library(phia)
 library(emmeans)
 library(sjPlot)
+library(nlme)
+library(xtable)
 
 #factor DFIMVC_ssPOST48
-
-DFIMVCmax1 <- read.csv("Data/DFIMVCmax_machine.csv")
-DFIMVCmax_sanspost48 <- DFIMVCmax1
 
 DFIMVCmax_sanspost48$instant_mesure <-
   factor(DFIMVCmax_sanspost48$instant_mesure ,
@@ -40,9 +39,6 @@ p
 
 #Create first model
 
-DFIMVCmax_sanspost48$VO2max <- as.factor(DFIMVCmax_sanspost48$VO2max)
-DFIMVCmax_sanspost48$journee <- as.factor(DFIMVCmax_sanspost48$journee)
-DFIMVCmax_sanspost48$Machine <- as.factor(DFIMVCmax_sanspost48$Machine)
 DFIMVCmax_sanspost48$condition <- factor(DFIMVCmax_sanspost48$condition, levels = c("placebo", "patch"))
 
 modele_mixte1 <-
@@ -53,12 +49,22 @@ modele_mixte1 <-
     REML = FALSE
   )
 
+modele_mixte1_1 <-
+  lme4::lmer(
+    IMVC ~ condition * instant_mesure + (1 + condition | sujet),
+    data = DFIMVCmax_sanspost48,
+    REML = FALSE
+  )
+
+summary(modele_mixte1_1)
+
+anova(modele_mixte1, modele_mixte1_1)
 
 #outlier and application condition
 
 ##lmer model
 
-residus <- residuals(modele_mixte1, type="pearson",scaled=TRUE)
+residus <- residuals(modele_mixte1_1, type="pearson",scaled=TRUE)
 DFIMVCmax_sanspost48$residus<-residus
 outliers::grubbs.test(DFIMVCmax_sanspost48$residus, type = 10, opposite = FALSE, two.sided = FALSE)
 
@@ -109,20 +115,20 @@ splom(pr01)
 
 #Testting interest of random effect lmer
 
-ranova(modele_mixte1)
+ranova(modele_mixte1_1)
 
 #plot interest of random effect
-
+ranef(modele_mixte1)
 dotplot(ranef(modele_mixte1, condVar=T))
 
 #ICC for random factor Sujet
 
 
-icc(modele_mixte1)
+icc(modele_mixte1_1)
 
 #test effet fixe
 
-anova(modele_mixte1)
+anova(modele_mixte1_1)
 
 #determination of variance in model trough F test value
 
@@ -130,7 +136,7 @@ anova(modele_mixte1, type= 3)
 
 # effect size
 
-modele_mixte1_1 <-
+modele_mixte1_2 <-
   nlme::lme(
     IMVC ~ condition * instant_mesure,
     data = DFIMVCmax_sanspost48,
@@ -138,67 +144,94 @@ modele_mixte1_1 <-
     method = "ML"
   )
 
-r.squaredGLMM(modele_mixte1) # only for normal distributed variable for each condition
-r.squaredLR(modele_mixte1_1) # ok for all, with adjusted r squared which is more precise
+r.squaredGLMM(modele_mixte1_1) # only for normal distributed variable for each condition
+r.squaredLR(modele_mixte1_2) # ok for all, with adjusted r squared which is more precise
 
 
 #contr.instant(3, base = 1, contrasts = TRUE, sparse = FALSE)
 
 #interaction test
 
-testInteractions(modele_mixte1)
-means <- interactionMeans(modele_mixte1)
+testInteractions(modele_mixte1_1)
+means <- interactionMeans(modele_mixte1_1)
 
 plot(means)
 
-testInteractions(modelemixte3, adjustment = "holm") #with holm correction to avoid type 1 error
-testInteractions(modelemixte3, pairwise = "condition", fixed = "instant")
+testInteractions(modele_mixte1_1, adjustment = "none")
+testInteractions(modele_mixte1_1, adjustment = "holm") #with holm correction to avoid type 1 error
+
+int_instant <- testInteractions(
+  modele_mixte1_1,
+  pairwise = "condition",
+  fixed = "instant_mesure",
+  adjustment = "holm"
+)# test with simple effect
+
+int_cond <- testInteractions(
+  modele_mixte1_1,
+  pairwise = "instant_mesure",
+  fixed = "condition",
+  adjustment = "holm"
+)
 
 #second method to calculate interraction contrast
 
 emm_options(lmer.df = "satterthwaite")
-emmeans_out <- emmeans(modelemixte3, ~instant*condition, weights = "show.levels")
+emmeans_out <- emmeans(modele_mixte1, ~instant_mesure*condition, weights = "show.levels")
 emmeans_out
 plot(emmeans_out)
 pair1 <- pairs(emmeans_out, adjust ="holm")
 summary(pair1)
-pair2 <- pairs(emmeans_out, by = c("instant"), adjust = "holm")
+pair2 <- pairs(emmeans_out, by = c("instant_mesure"), adjust = "holm")
 summary(pair2)
 pair3 <- pairs(emmeans_out, by = c("condition"), adjust = "holm")
 summary(pair3)
 
-#plot contrast
-
-emmeans_out1 <- summary(emmeans_out)
-pd <- position_dodge(0.1)
-ggplot(emmeans_out1, aes(x=instant , y=emmean, colour=condition, group= condition)) +
-  geom_errorbar(aes(ymin=emmean-SE, ymax=emmean+SE), colour="black", width=.1, position=pd) +
-  geom_line(position=pd) +
-  geom_point(position=pd, size=3)
-
 #variance homogeneity
 
-modelemixte3_vara <-
-  lme(
-    FMD ~ condition * instant,
-    data = test_clean3,
-    random =  ~ 1 | sujet,
-    method = "ML",
-    na.action = na.omit, weights = varIdent(form = ~1|instant))
+modele_mixte1_2_vara <- nlme::lme(
+  IMVC ~ condition * instant_mesure,
+  data = DFIMVCmax_sanspost48,
+  random = ~ 1 | sujet / condition,
+  method = "ML",
+  weights = varIdent(form = ~1|instant_mesure))
 
-VarCorr(modelemixte3_vara)
-summary(modelemixte3_vara)$modelStruct$varStruct
+VarCorr(modele_mixte1_2_vara)
+summary(modele_mixte1_2_vara)$modelStruct$varStruct
 
 #if not homogenous anova between two model
 
-modelemixte1_1 <-  lme(
-  FMD ~ condition * instant,
-  data = test_clean3,
-  random =  ~ 1 | sujet,
-  method = "ML",
-  na.action = na.omit)
+anova(modele_mixte1_2, modele_mixte1_2_vara)
 
-anova(modelemixte1_1, modelemixte3_vara)
+# plot to investigated crossed fixed and random effect in repeated measures
+interaction.plot(DFIMVCmax_sanspost48$condition, DFIMVCmax_sanspost48$sujet, DFIMVCmax_sanspost48$IMVC, las=1,
+                 trace.label="identifiant du sujet", xlab="Traitement", ylab="IMVCmax")
+
+interaction.plot(DFIMVCmax_sanspost48$instant_mesure, DFIMVCmax_sanspost48$sujet, DFIMVCmax_sanspost48$IMVC, las=1,
+                 trace.label="identifiant du sujet", xlab="instant", ylab="IMVC")
+
+# plot individual variation
+
+p<-ggplot(DFIMVCmax_sanspost48, aes(x=instant_mesure, y=IMVC, colour=sujet, group=sujet))+
+  geom_line() +
+  facet_wrap(~condition)
+p
+
+#covariance matrix structure
+
+ACF(modele_mixte1_2)
+plot(ACF(modele_mixte1_2, maxLag = 10),alpha = 0.01)
+
+modelemixte1_2_1 <- update(modele_mixte1_2, correlation=corAR1(form=~1|sujet/condition))
+#covariance structure = autoregressiv, know if we upgrade matrix witrh the new one
+
+anova(modele_mixte1_2, modelemixte1_2_1)
+#no differences, with spécifics covariance model
+
+#plot linear model
+
+plot_model(modele_mixte1, show.values = T, width = 0.1, show.p = T)
+t <- tab_model(modele_mixte1, show.reflvl = T, show.intercept = F, p.style = "numeric", show.se = T)
 
 #analyse sur les pourcentage avec post48
 
