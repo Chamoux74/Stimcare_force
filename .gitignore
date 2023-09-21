@@ -5,5 +5,8 @@
 
 
 # Personnal add
-Output/
-Data/
+Output
+Data
+force_files
+.html
+
