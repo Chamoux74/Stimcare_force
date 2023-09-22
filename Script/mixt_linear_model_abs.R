@@ -12,6 +12,7 @@ library(emmeans)
 library(sjPlot)
 library(nlme)
 library(xtable)
+library(robustlmm)
 
 #factor DFIMVC_ssPOST48
 
@@ -50,13 +51,18 @@ modele_mixte1 <-
   )
 
 modele_mixte1_1 <-
-  lme4::lmer(
-    IMVC ~ condition * instant_mesure + (1 + condition | sujet),
+  rlmer(
+    IMVC ~ condition * instant_mesure + (1 |sujet/condition),
     data = DFIMVCmax_sanspost48,
     REML = FALSE
   )
 
+
+
 summary(modele_mixte1_1)
+summary(modele_mixte1)
+
+tab_model(modele_mixte1_1)
 
 anova(modele_mixte1, modele_mixte1_1)
 
@@ -152,23 +158,23 @@ r.squaredLR(modele_mixte1_2) # ok for all, with adjusted r squared which is more
 
 #interaction test
 
-testInteractions(modele_mixte1_1)
-means <- interactionMeans(modele_mixte1_1)
+phia::testInteractions(modele_mixte1)
+means <- phia::interactionMeans(modele_mixte1)
 
 plot(means)
 
 testInteractions(modele_mixte1_1, adjustment = "none")
 testInteractions(modele_mixte1_1, adjustment = "holm") #with holm correction to avoid type 1 error
 
-int_instant <- testInteractions(
-  modele_mixte1_1,
+int_instant <- phia::testInteractions(
+  modele_mixte1,
   pairwise = "condition",
   fixed = "instant_mesure",
   adjustment = "holm"
 )# test with simple effect
 
-int_cond <- testInteractions(
-  modele_mixte1_1,
+int_cond <- phia::testInteractions(
+  modele_mixte1,
   pairwise = "instant_mesure",
   fixed = "condition",
   adjustment = "holm"
@@ -177,12 +183,12 @@ int_cond <- testInteractions(
 #second method to calculate interraction contrast
 
 emm_options(lmer.df = "satterthwaite")
-emmeans_out <- emmeans(modele_mixte1, ~instant_mesure*condition, weights = "show.levels")
+emmeans_out <- emmeans(modele_mixte1_1, ~instant_mesure*condition, weights = "show.levels")
 emmeans_out
 plot(emmeans_out)
 pair1 <- pairs(emmeans_out, adjust ="holm")
 summary(pair1)
-pair2 <- pairs(emmeans_out, by = c("instant_mesure"), adjust = "holm")
+pair2 <- pairs(emmeans_out, by = c("instant_mesure"), adjust = "holm", )
 summary(pair2)
 pair3 <- pairs(emmeans_out, by = c("condition"), adjust = "holm")
 summary(pair3)
@@ -217,6 +223,7 @@ p<-ggplot(DFIMVCmax_sanspost48, aes(x=instant_mesure, y=IMVC, colour=sujet, grou
   facet_wrap(~condition)
 p
 
+
 #covariance matrix structure
 
 ACF(modele_mixte1_2)
@@ -232,96 +239,4 @@ anova(modele_mixte1_2, modelemixte1_2_1)
 
 plot_model(modele_mixte1, show.values = T, width = 0.1, show.p = T)
 t <- tab_model(modele_mixte1, show.reflvl = T, show.intercept = F, p.style = "numeric", show.se = T)
-
-#analyse sur les pourcentage avec post48
-
-dfpourcentage$condition <- factor(dfpourcentage$condition, levels = c("placebo", "patch"))
-dfpourcentage$instant <- factor(dfpourcentage$instant, levels = c("pre","mid", "post", "post48"))
-
-modele_mixte <-
-  lmer(IMVCdif ~ condition * instant + (1|sujet), data = dfpourcentage)
-
-summary(modele_mixte)
-
-modele_mixte1 <-
-  lmer(IMVCdif ~ condition + instant + (1|sujet), data = dfpourcentage)
-
-summary(modele_mixte1)
-
-anova(modele_mixte)
-
-#analyse sur les pourcentage sans post48
-
-dfpourcentage1 <- filter(dfpourcentage, instant != "post48")
-
-dfpourcentage1$condition <- as.factor(dfpourcentage1$condition)
-dfpourcentage1$instant <- as.factor(dfpourcentage1$instant)
-
-modele_mixte2 <-
-  lmer(IMVCdif ~ condition * instant + (1|sujet), data = dfpourcentage1)
-
-summary(modele_mixte2)
-
-modele_mixte3 <-
-  lmer(IMVCdif ~ condition + instant + (1|sujet), data = dfpourcentage1)
-
-summary(modele_mixte3)
-
-anova(modele_mixte)
-
-#analyse sur les valeurs absolue
-
-DFIMVCmax$condition <- factor(DFIMVCmax$condition, levels = c("placebo", "patch"))
-DFIMVCmax$instant_mesure <- factor(DFIMVCmax$instant_mesure, levels = c("pre", "mid", "post","post48"))
-
-modele_mixte4 <-
-  lmer(IMVC ~ condition * instant_mesure + (1|sujet), data = DFIMVCmax)
-
-summary(modele_mixte4)
-
-modele_mixte5 <-
-  lmer(IMVC ~ condition + instant_mesure + (1|sujet), data = DFIMVCmax)
-
-summary(modele_mixte5)
-
-anova(modele_mixte5)
-
-# analyse sans le post48
-
-
-
-
-summary(modele_mixte6)
-summary(modele_mixte6_1)
-
-plot(modele_mixte6)
-qqnorm(resid(modele_mixte6))
-qqline(resid(modele_mixte6))
-
-class(modele_mixte6) <- "lmerMod"
-
-stargazer(modele_mixte6, type = "text",
-          digits = 3,
-          star.cutoffs = c(0.05, 0.01, 0.001),
-          digit.separator = "")
-
-
-modele_mixte7 <-
-  lmer(IMVC ~ condition + instant_mesure + (1|sujet), data = DFIMVCmax1)
-
-summary(modele_mixte7)
-
-#confident interval
-
-confint.merMod(modele_mixte7)
-
-anova(modele_mixte7, modele_mixte6)
-
-#plot fitted values/ residual permet de voir si le modèle choisi est bon
-
-plot(fitted(modele_mixte7), residuals(modele_mixte7), xlab = "Fitted Values", ylab = "Residuals") +
-  abline(h = 0, lty = 2) +
-  lines(smooth.spline(fitted(modele_mixte7), residuals(modele_mixte7)))
-
-
 

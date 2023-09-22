@@ -177,10 +177,6 @@ DFIMVCmean_sanspost48 <- filter(DFIMVCmean, instant_mesure != "post48")
 
 #analyse
 
-model <- lm(IMVC~condition*instant_mesure, data = DFIMVCmax_sanspost48)
-plot(model, 1)
-levene_test(data = DFIMVCmax_sanspost48, IMVC~condition*instant_mesure)
-
 res.aov1 <- rstatix::anova_test(
   data = DFIMVCmax, dv = IMVC, wid = sujet ,
   within = c(condition, instant_mesure) , effect.size = "ges",
